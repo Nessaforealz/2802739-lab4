@@ -94,24 +94,51 @@ async function searchCountry(countryName) {
         }
         const data = await response.json();
         const country = data[0];
-        // Update DOM
+        // Update DOM,also display official name below common name
         countryInfo.innerHTML = `
             <h2>${country.name.common}</h2>
+            <p><strong>Official Name:</strong> ${country.name.official}</p>
             <p><strong>Capital:</strong> ${country.capital ? country.capital[0] : 'N/A'}</p>
             <p><strong>Population:</strong> ${country.population.toLocaleString()}</p>
             <p><strong>Region:</strong> ${country.region}</p>
             <img src="${country.flags.svg}" alt="${country.name.common} flag">
         `;
-        // Fetch bordering countries
-        if (country.borders) {
-            const borderResponse = await fetch(`https://restcountries.com/v3.1/alpha?codes=${country.borders.join(',')}`);
+        /* Fetch bordering countriesPart 5: API Response Structure
+
+The REST Countries API returns data in this format:
+
+[
+    {
+        "name": {
+            "common": "South Africa",
+            "official": "Republic of South Africa"
+        },
+        "capital": ["Pretoria"],
+        "population": 59308690,
+        "region": "Africa",
+        "borders": ["BWA", "LSO", "MOZ", "NAM", "SWZ", "ZWE"],
+        "flags": {
+            "svg": "https://flagcdn.com/za.svg",
+            "png": ""
+        }
+    }
+]
+When displaying the country,we put the common name above the official name i.e for South Africa we wqill display Republic of South Africa below South AfricaAn then we will have a common lin
+To get bordering country details, fetch by country code: https://restcountries.com/v3.1/alpha/{code} */
+
+/*all bordering countires shall be displayed with their country code instead of their name
+and the bordering country flags are the same size 
+ */
+        if (country.borders) {      
+            const borderCodes = country.borders.join(',');
+            const borderResponse = await fetch(`https://restcountries.com/v3.1/alpha?codes=${borderCodes}`);
             const borderData = await borderResponse.json();
             borderingCountries.innerHTML = '<h3>Bordering Countries:</h3>';
             borderData.forEach(borderCountry => {
                 borderingCountries.innerHTML += `
                     <div class="border-country">
-                        <img src="${borderCountry.flags.svg}" alt="${borderCountry.name.common} flag" class="border-flag">
-                        <p>${borderCountry.name.common}</p>
+                        <p>${borderCountry.cca3}</p>
+                        <img src="${borderCountry.flags.svg}" alt="${borderCountry.name.common} flag">
                     </div>
                 `;
             });
@@ -121,7 +148,6 @@ async function searchCountry(countryName) {
     } catch (error) {
         errorMessage.textContent = error.message;
     } finally {
-        // Hide loading spinner
         loadingSpinner.style.display = 'none';
     }
-}              
+}   
